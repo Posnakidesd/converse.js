@@ -25,7 +25,7 @@
                         by="lounge@montague.lit"/>
                 <origin-id xmlns="urn:xmpp:sid:0" id="${msg_obj.get('origin_id')}"/>
             </message>`);
-        await view.model.onMessage(reflection_stanza);
+        await view.model.queueMessage(reflection_stanza);
         await u.waitUntil(() => view.el.querySelectorAll('.chat-msg__body.chat-msg__body--received').length, 500);
 
         const retract_button = await u.waitUntil(() => view.el.querySelector('.chat-msg__content .chat-msg__action-retract'));
@@ -58,7 +58,7 @@
                     </message>
                 `);
                 const view = _converse.api.chatviews.get(muc_jid);
-                await view.model.onMessage(received_stanza);
+                await view.model.queueMessage(received_stanza);
                 await u.waitUntil(() => view.el.querySelectorAll('.chat-msg').length === 1);
                 expect(view.model.messages.at(0).get('retracted')).toBeFalsy();
                 expect(view.model.messages.at(0).get('is_ephemeral')).toBeFalsy();
@@ -400,7 +400,7 @@
                     </message>
                 `);
                 const view = _converse.api.chatviews.get(muc_jid);
-                await view.model.onMessage(received_stanza);
+                await view.model.queueMessage(received_stanza);
                 await u.waitUntil(() => view.el.querySelectorAll('.chat-msg').length === 1);
                 expect(view.model.messages.at(0).get('retracted')).toBeFalsy();
                 expect(view.model.messages.at(0).get('is_ephemeral')).toBeFalsy();
@@ -446,7 +446,7 @@
                         <stanza-id xmlns='urn:xmpp:sid:0' id='stanza-id-1' by='${muc_jid}'/>
                     </message>
                 `);
-                await view.model.onMessage(received_stanza);
+                await view.model.queueMessage(received_stanza);
                 await u.waitUntil(() => view.model.messages.length === 1);
                 expect(view.model.messages.at(0).get('retracted')).toBeFalsy();
 
@@ -504,7 +504,7 @@
                             </moderated>
                         </apply-to>
                     </message>`);
-                await view.model.onMessage(retraction);
+                await view.model.queueMessage(retraction);
                 expect(view.model.messages.length).toBe(1);
                 expect(view.model.messages.at(0).get('moderated')).toBe('retracted');
                 expect(view.model.messages.at(0).get('moderation_reason')).toBe(reason);
@@ -530,7 +530,7 @@
                         <stanza-id xmlns='urn:xmpp:sid:0' id='stanza-id-1' by='${muc_jid}'/>
                     </message>
                 `);
-                await view.model.onMessage(received_stanza);
+                await view.model.queueMessage(received_stanza);
                 await u.waitUntil(() => view.el.querySelector('.chat-msg__content'));
                 expect(view.el.querySelector('.chat-msg__content .chat-msg__action-retract')).toBe(null);
                 const result = await view.model.canRetractMessages();
@@ -557,7 +557,7 @@
                         <stanza-id xmlns='urn:xmpp:sid:0' id='stanza-id-1' by='${muc_jid}'/>
                     </message>
                 `);
-                await view.model.onMessage(received_stanza);
+                await view.model.queueMessage(received_stanza);
                 await u.waitUntil(() => view.model.messages.length === 1);
                 expect(view.model.messages.length).toBe(1);
 
@@ -585,7 +585,7 @@
                             </moderated>
                         </apply-to>
                     </message>`);
-                await view.model.onMessage(retraction);
+                await view.model.queueMessage(retraction);
 
                 await u.waitUntil(() => view.el.querySelectorAll('.chat-msg--retracted').length === 1);
                 expect(view.model.messages.length).toBe(1);
@@ -778,7 +778,7 @@
                                 by="lounge@montague.lit"/>
                         <origin-id xmlns="urn:xmpp:sid:0" id="${msg_obj.get('origin_id')}"/>
                     </message>`);
-                await view.model.onMessage(reflection_stanza);
+                await view.model.queueMessage(reflection_stanza);
                 await u.waitUntil(() => view.el.querySelectorAll('.chat-msg__body.chat-msg__body--received').length, 500);
                 expect(view.model.messages.length).toBe(1);
                 expect(view.model.messages.at(0).get('editable')).toBe(true);
@@ -794,7 +794,7 @@
                             </moderated>
                         </apply-to>
                     </message>`);
-                await view.model.onMessage(retraction);
+                await view.model.queueMessage(retraction);
                 expect(view.model.messages.length).toBe(1);
                 expect(view.model.messages.at(0).get('moderated')).toBe('retracted');
                 expect(view.model.messages.at(0).get('moderation_reason')).toBe(reason);

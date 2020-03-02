@@ -383,6 +383,19 @@ converse.plugins.add('converse-chat', {
                 return this.messages.fetched;
             },
 
+            /**
+             * Queue an incoming `chat` message stanza for processing.
+             * @async
+             * @private
+             * @method _converse.ChatRoom#queueMessage
+             * @param { XMLElement } stanza - The message stanza.
+             */
+            queueMessage (stanza, original_stanza, from_jid) {
+                this.msg_chain = (this.msg_chain || this.messages.fetched);
+                this.msg_chain = this.msg_chain.then(() => this.onMessage(stanza, original_stanza, from_jid));
+                return this.msg_chain;
+            },
+
             async onMessage (stanza, original_stanza, from_jid) {
                 const attrs = await this.getMessageAttributesFromStanza(stanza, original_stanza);
                 const message = this.getDuplicateMessage(attrs);
@@ -397,7 +410,7 @@ converse.plugins.add('converse-chat', {
                     }
                     this.setEditable(attrs, attrs.time, stanza);
                     if (u.shouldCreateMessage(attrs)) {
-                        const msg = this.handleCorrection(attrs) || this.createMessage(attrs);
+                        const msg = this.handleCorrection(attrs) || await this.createMessage(attrs);
                         this.incrementUnreadMsgCounter(msg);
                     }
                 }
@@ -1202,7 +1215,7 @@ converse.plugins.add('converse-chat', {
             const has_body = sizzle(`body, encrypted[xmlns="${Strophe.NS.OMEMO}"]`, stanza).length > 0;
             const roster_nick = get(contact, 'attributes.nickname');
             const chatbox = await _converse.api.chats.get(contact_jid, {'nickname': roster_nick}, has_body);
-            chatbox && await chatbox.onMessage(stanza, original_stanza, from_jid);
+            chatbox && await chatbox.queueMessage(stanza, original_stanza, from_jid);
             /**
              * Triggered when a message stanza is been received and processed.
              * @event _converse#message

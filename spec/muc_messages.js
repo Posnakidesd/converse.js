@@ -91,7 +91,7 @@
                 </message>
             `);
             const view = _converse.api.chatviews.get(muc_jid);
-            await view.model.onMessage(received_stanza);
+            await view.model.queueMessage(received_stanza);
             spyOn(converse.env.log, 'warn');
             _converse.connection._dataRecv(test_utils.createRequest(received_stanza));
             expect(converse.env.log.warn).toHaveBeenCalledWith(
@@ -120,7 +120,7 @@
                     to: 'romeo@montague.lit',
                     type: 'groupchat'
                 }).c('body').t(message).tree();
-            await view.model.onMessage(msg);
+            await view.model.queueMessage(msg);
             expect(u.hasClass('mentioned', view.el.querySelector('.chat-msg'))).toBeTruthy();
             done();
         }));
@@ -141,7 +141,7 @@
                     to: 'romeo@montague.lit',
                     type: 'groupchat'
                 }).c('body').t('First message').tree();
-            await view.model.onMessage(msg);
+            await view.model.queueMessage(msg);
             await u.waitUntil(() => view.el.querySelectorAll('.chat-msg').length === 1);
 
             msg = $msg({
@@ -150,7 +150,7 @@
                     to: 'romeo@montague.lit',
                     type: 'groupchat'
                 }).c('body').t('Another message').tree();
-            await view.model.onMessage(msg);
+            await view.model.queueMessage(msg);
             await u.waitUntil(() => view.el.querySelectorAll('.chat-msg').length === 2);
             expect(view.model.messages.length).toBe(2);
             done();
@@ -196,7 +196,7 @@
                 </message>`);
 
             spyOn(view.model, 'updateMessage');
-            await view.model.onMessage(stanza);
+            await view.model.queueMessage(stanza);
             await u.waitUntil(() => view.model.getDuplicateMessage.calls.count() === 2);
             result = await view.model.getDuplicateMessage.calls.all()[1].returnValue;
             expect(result instanceof _converse.Message).toBe(true);
@@ -302,7 +302,7 @@
                 }).c('body').t('I am groot').tree();
             const view = _converse.api.chatviews.get(muc_jid);
             spyOn(converse.env.log, 'warn');
-            await view.model.onMessage(msg);
+            await view.model.queueMessage(msg);
             expect(converse.env.log.warn).toHaveBeenCalledWith(
                 'onMessage: Ignoring XEP-0280 "groupchat" message carbon, '+
                 'according to the XEP groupchat messages SHOULD NOT be carbon copied'
@@ -326,7 +326,7 @@
                 to: 'romeo@montague.lit',
                 type: 'groupchat'
             }).c('body').t('I wrote this message!').tree();
-            await view.model.onMessage(msg);
+            await view.model.queueMessage(msg);
             await u.waitUntil(() => view.el.querySelectorAll('.chat-msg').length);
             expect(view.model.messages.last().occupant.get('affiliation')).toBe('owner');
             expect(view.model.messages.last().occupant.get('role')).toBe('moderator');
@@ -352,7 +352,7 @@
                 to: 'romeo@montague.lit',
                 type: 'groupchat'
             }).c('body').t('Another message!').tree();
-            await view.model.onMessage(msg);
+            await view.model.queueMessage(msg);
             expect(view.model.messages.last().occupant.get('affiliation')).toBe('member');
             expect(view.model.messages.last().occupant.get('role')).toBe('participant');
             expect(view.el.querySelectorAll('.chat-msg').length).toBe(2);
@@ -387,7 +387,7 @@
                 to: 'romeo@montague.lit',
                 type: 'groupchat'
             }).c('body').t('Message from someone not in the MUC right now').tree();
-            await view.model.onMessage(msg);
+            await view.model.queueMessage(msg);
             expect(view.model.messages.last().occupant).toBeUndefined();
             // Check that there's a new "add" event handler, for when the occupant appears.
             expect(view.model.occupants._events.add.length).toBe(add_events+1);
@@ -451,7 +451,7 @@
                     to: 'romeo@montague.lit',
                     type: 'groupchat'
                 }).c('body').t('I wrote this message!').tree();
-            await view.model.onMessage(msg);
+            await view.model.queueMessage(msg);
             expect(view.model.messages.last().get('sender')).toBe('me');
             done();
         }));
@@ -476,7 +476,7 @@
                 }).tree();
             _converse.connection._dataRecv(test_utils.createRequest(stanza));
             const msg_id = u.getUniqueId();
-            await view.model.onMessage($msg({
+            await view.model.queueMessage($msg({
                     'from': 'lounge@montague.lit/newguy',
                     'to': _converse.connection.jid,
                     'type': 'groupchat',
@@ -488,7 +488,7 @@
             expect(view.el.querySelector('.chat-msg__text').textContent)
                 .toBe('But soft, what light through yonder airlock breaks?');
 
-            await view.model.onMessage($msg({
+            await view.model.queueMessage($msg({
                     'from': 'lounge@montague.lit/newguy',
                     'to': _converse.connection.jid,
                     'type': 'groupchat',
@@ -500,7 +500,7 @@
             expect(view.el.querySelectorAll('.chat-msg').length).toBe(1);
             expect(view.el.querySelectorAll('.chat-msg__content .fa-edit').length).toBe(1);
 
-            await view.model.onMessage($msg({
+            await view.model.queueMessage($msg({
                     'from': 'lounge@montague.lit/newguy',
                     'to': _converse.connection.jid,
                     'type': 'groupchat',
@@ -597,7 +597,7 @@
             expect(u.hasClass('correcting', view.el.querySelector('.chat-msg'))).toBe(false);
 
             // Check that messages from other users are skipped
-            await view.model.onMessage($msg({
+            await view.model.queueMessage($msg({
                 'from': muc_jid+'/someone-else',
                 'id': u.getUniqueId(),
                 'to': 'romeo@montague.lit',
@@ -658,7 +658,7 @@
                                by="lounge@montague.lit"/>
                     <origin-id xmlns="urn:xmpp:sid:0" id="${msg_obj.get('origin_id')}"/>
                 </message>`);
-            await view.model.onMessage(stanza);
+            await view.model.queueMessage(stanza);
             await u.waitUntil(() => view.el.querySelectorAll('.chat-msg__body.chat-msg__body--received').length, 500);
             expect(view.el.querySelectorAll('.chat-msg__receipt').length).toBe(0);
             expect(view.el.querySelectorAll('.chat-msg__body.chat-msg__body--received').length).toBe(1);
@@ -842,7 +842,7 @@
                         .c('reference', {'xmlns':'urn:xmpp:reference:0', 'begin':'6', 'end':'10', 'type':'mention', 'uri':'xmpp:z3r0@montague.lit'}).up()
                         .c('reference', {'xmlns':'urn:xmpp:reference:0', 'begin':'11', 'end':'14', 'type':'mention', 'uri':'xmpp:romeo@montague.lit'}).up()
                         .c('reference', {'xmlns':'urn:xmpp:reference:0', 'begin':'15', 'end':'23', 'type':'mention', 'uri':'xmpp:mr.robot@montague.lit'}).nodeTree;
-                await view.model.onMessage(msg);
+                await view.model.queueMessage(msg);
                 const messages = view.el.querySelectorAll('.chat-msg__text');
                 expect(messages.length).toBe(1);
                 expect(messages[0].classList.length).toEqual(1);
@@ -887,7 +887,7 @@
                             type="groupchat">
                         <body>Boo!</body>
                     </message>`);
-                await view.model.onMessage(stanza);
+                await view.model.queueMessage(stanza);
 
                 // Run a few unit tests for the parseTextForReferences method
                 let [text, references] = view.model.parseTextForReferences('hello z3r0')

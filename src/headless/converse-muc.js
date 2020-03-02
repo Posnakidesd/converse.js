@@ -462,7 +462,7 @@ converse.plugins.add('converse-muc', {
             },
 
             async clearMessageQueue () {
-                await Promise.all(this.message_queue.map(m => this.onMessage(m)));
+                await Promise.all(this.message_queue.map(m => this.queueMessage(m)));
                 this.message_queue = [];
             },
 
@@ -573,7 +573,7 @@ converse.plugins.add('converse-muc', {
                             log.warn(`received a mam message with type "chat".`);
                             return true;
                         }
-                        this.onMessage(stanza);
+                        this.queueMessage(stanza);
                         return true;
                     }, null, 'message', 'groupchat', null, room_jid,
                     {'matchBareFromJid': true}
@@ -1801,19 +1801,32 @@ converse.plugins.add('converse-muc', {
             },
 
             /**
-             * Handler for all MUC messages sent to this groupchat.
+             * Queue an incoming message stanza meant for this {@link _converse.Chatroom} for processing.
+             * @async
+             * @private
+             * @method _converse.ChatRoom#queueMessage
+             * @param { XMLElement } stanza - The message stanza.
+             */
+            queueMessage (stanza) {
+                if (this.messages.fetched) {
+                    this.msg_chain = (this.msg_chain || this.messages.fetched);
+                    this.msg_chain = this.msg_chain.then(() => this.onMessage(stanza));
+                    return this.msg_chain;
+                } else {
+                    this.message_queue.push(stanza);
+                    return Promise.resolve();
+                }
+            },
+
+            /**
+             * Handler for all MUC messages sent to this groupchat. This method
+             * shouldn't be called directly, instead {@link _converse.ChatRoom#queueMessage}
+             * should be called.
              * @private
              * @method _converse.ChatRoom#onMessage
              * @param { XMLElement } stanza - The message stanza.
              */
             async onMessage (stanza) {
-                if (!this.messages.fetched || this.messages.fetched.isPending) {
-                    // We're not ready to accept messages before we've fetched
-                    // from our store, so we stuff them into a queue.
-                    this.message_queue.push(stanza);
-                    return;
-                }
-
                 if (sizzle(`message > forwarded[xmlns="${Strophe.NS.FORWARD}"]`, stanza).length) {
                     return log.warn('onMessage: Ignoring unencapsulated forwarded groupchat message');
                 }
@@ -1844,7 +1857,7 @@ converse.plugins.add('converse-muc', {
                     return _converse.api.trigger('message', {'stanza': original_stanza});
                 }
 
-                if (this.handleRetraction(attrs) ||
+                if (await this.handleRetraction(attrs) ||
                         await this.handleModeration(attrs) ||
                         this.subjectChangeHandled(attrs) ||
                         this.ignorableCSN(attrs)) {
@@ -2649,3 +2662,5 @@ converse.plugins.add('converse-muc', {
         /************************ END API ************************/
     }
 });
+
+

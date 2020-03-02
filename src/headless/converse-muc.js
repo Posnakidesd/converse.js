@@ -1766,7 +1766,7 @@ converse.plugins.add('converse-muc', {
              * @returns { Boolean } Returns `true` or `false` depending on
              *  whether a message was moderated or not.
              */
-            handleModeration (attrs) {
+            async handleModeration (attrs) {
                 const MODERATION_ATTRIBUTES = [
                     'editable',
                     'moderated',
@@ -1781,7 +1781,7 @@ converse.plugins.add('converse-muc', {
                     const message = this.messages.findWhere(query);
                     if (!message) {
                         attrs['dangling_moderation'] = true;
-                        this.messages.create(attrs);
+                        await this.createMessage(attrs);
                         return true;
                     }
                     message.save(pick(attrs, MODERATION_ATTRIBUTES));
@@ -1832,7 +1832,7 @@ converse.plugins.add('converse-muc', {
                         return log.warn(`onMessage: Ignoring alleged MAM groupchat message from ${stanza.getAttribute('from')}`);
                     }
                 }
-                this.createInfoMessages(stanza);
+                await this.createInfoMessages(stanza);
                 this.fetchFeaturesIfConfigurationChanged(stanza);
 
                 const attrs = await this.getMessageAttributesFromStanza(stanza, original_stanza);
@@ -1845,7 +1845,7 @@ converse.plugins.add('converse-muc', {
                 }
 
                 if (this.handleRetraction(attrs) ||
-                        this.handleModeration(attrs) ||
+                        await this.handleModeration(attrs) ||
                         this.subjectChangeHandled(attrs) ||
                         this.ignorableCSN(attrs)) {
                     return _converse.api.trigger('message', {'stanza': original_stanza});
@@ -1853,7 +1853,7 @@ converse.plugins.add('converse-muc', {
                 this.setEditable(attrs, attrs.time);
 
                 if (u.shouldCreateGroupchatMessage(attrs)) {
-                    const msg = this.handleCorrection(attrs) || await this.messages.create(attrs, {promise: true});
+                    const msg = this.handleCorrection(attrs) || await this.createMessage(attrs);
                     this.incrementUnreadMsgCounter(msg);
                 }
                 _converse.api.trigger('message', {'stanza': original_stanza, 'chatbox': this});
@@ -1870,7 +1870,7 @@ converse.plugins.add('converse-muc', {
                             'message': text,
                             'is_ephemeral': true
                         }
-                        this.messages.create(attrs);
+                        this.createMessage(attrs);
                     }
                 }
             },
@@ -1960,7 +1960,7 @@ converse.plugins.add('converse-muc', {
                             // XXX: very naive duplication checking
                             return;
                         }
-                        this.messages.create(data);
+                        this.createMessage(data);
                     }
                 });
             },
